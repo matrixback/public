@@ -1,33 +1,55 @@
-# public
+## 搜索某一个 studio 的课程
 
-将 get_issues, get_forks 替换为下面的函数，再跑一下
+url: path('studio/<int:pk>/class_schedule/', ClassScheduleListView.as_view())
 
 ```
-ISSUE_CACHE = {}
-
-def get_issues(repo):
+class ClassScheduleListView(generics.ListAPIView):
     """
-    get all issues of a repo sorted by created
+    As a user, I want to search/filter a studio's class schedule. 
+    The search/filter can be based on the class name, coach name, date, and time range.
     """
-    issues = ISSUE_CACHE.get(repo)
-    if issues is None:
-        repository = g.get_repo(repo)
-        issues = []
-        for issue in repository.get_issues(state='all', since=since_date, sort='created'):
-            issues.append(issue)
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClassScheduleSerializer
+    queryset = Studio.objects.all()
 
-        ISSUE_CACHE[repo] = issues
-    
-    return issues
+    def list(self, request, *args, **kwargs):
+        studio = self.get_object() # 首先，根据 pk(primary key) 拿到 对应的 studio
+        classes = studio.classes.all() # 获取到所有的 classes
+        # 根据请求的 params 进行查询
+        # 如果有 name，就搜索包含有此 name 的 class
+        name = self.request.query_params.get('name') 
+        if name is not None:
+            classes = classes.filter(name__contains=name)
 
+        coach = self.request.query_params.get('coach')
+        if coach is not None:
+            classes = classes.filter(coach__contains=coach)
 
-def get_forks(repo):
-    """
-    get forks of a repo
-    """
-    repository = g.get_repo(repo)
-    forks = []
-    for fork in repository.get_forks():
-        forks.append(fork)
-    return forks
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+        if start_time and end_time:
+            start_time = datetime.strptime(start_time, '%H:%M:%S')
+            end_time = datetime.strptime(end_time, '%H:%M:%S')
+            classes = classes.filter(start_time__lte=start_time)
+            classes = classes.filter(end_time__gte=end_time)
+
+        rv = []
+        for class_ in classes:
+            # 获取到这些课程的课程表
+            schedules = class_.schedules.all()
+            # 再次通过 date 搜索过滤
+            date = self.request.query_params.get('date')
+            if date is not None:
+                date = datetime.strptime(date, "%Y-%m-%d")
+                schedules = schedules.filter(date=date).filter(is_active=True).all()
+            else:
+                today = datetime.now()
+                schedules = schedules.filter(date__gte=today).filter(is_active=True).all()
+
+            rv.extend(ClassScheduleSerializer(schedules, many=True).data)
+        # 根据日期再排序
+        rv.sort(key=cmp_to_key(self.schedule_cmp))
+        
+        return Response(rv)
 ```
