@@ -223,3 +223,39 @@ def save_top_50_words():
     with open('top_50_words.txt', 'w') as f:
         for word, _ in w_cnt_pair[:50]:
             f.write(f'{word}\n')
+
+            
+## url 基础知识
+
+https://docs.python.org/zh-cn/3/library/urllib.parse.html
+
+一个 url 由scheme, hostname, path, params, query, framgent 组成
+http://docs.python.org/3/library/urllib.parse.html?highlight=params#url-parsing 
+
+>>> from urllib.parse import urlparse
+>>> url = 'http://docs.python.org/3/library/urllib.parse.html?highlight=params#url-parsing'
+>>> parsed_url = urlparse(url)
+>>> parsed_url
+ParseResult(scheme='http', netloc='docs.python.org', path='/3/library/urllib.parse.html', params='', query='highlight=params', fragment='url-parsing')
+```
+
+>>>from urllib.parse import urlparse
+>>>urlparse("scheme://netloc/path;parameters?query#fragment")
+ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+            query='query', fragment='fragment')
+>>>o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+             "highlight=params#url-parsing")
+>>>o
+ParseResult(scheme='http', netloc='docs.python.org:80',
+            path='/3/library/urllib.parse.html', params='',
+            query='highlight=params', fragment='url-parsing')
+>>>o.scheme
+'http'
+>>>o.netloc
+'docs.python.org:80'
+>>>o.hostname
+'docs.python.org'
+>>>o.port
+80
+```
+'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
