@@ -15,6 +15,8 @@ longest = 0
 # 统计出现次数最多的50个单词
 words_cnt = defaultdict(int)
 
+# 爬虫框架已完成，我们只需要完成 scraper 函数即可。
+# 给你一个 url, resp，返回这个 url 对应的页面 resp 里面有效的 url list
 
 def scraper(url, resp):
     """
